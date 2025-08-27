@@ -93,3 +93,54 @@ class OrderItem:
     def __str__(self):
         return f"{self.product_name} x{self.quantity} = ${self.subtotal:.2f}"
 
+
+# Order class for managing customer orders
+class Order:
+    def __init__(self, order_id: str, customer_username: str, items: List[OrderItem], delivery_address: str):
+        self.order_id = order_id
+        self.customer_username = customer_username
+        self.items = items
+        self.delivery_address = delivery_address
+        self.total_amount = sum(item.subtotal for item in items)
+        self.status = OrderStatus.PENDING
+        self.rider_username: Optional[str] = None
+        self.created_at = datetime.now()
+        self.updated_at = datetime.now()
+
+    def assign_rider(self, rider_username: str):
+        self.rider_username = rider_username
+        self.status = OrderStatus.ASSIGNED
+        self.updated_at = datetime.now()
+
+    def update_status(self, new_status: OrderStatus):
+        self.status = new_status
+        self.updated_at = datetime.now()
+
+    def to_dict(self):
+        return {
+            "order_id": self.order_id,
+            "customer_username": self.customer_username,
+            "items": [item.to_dict() for item in self.items],
+            "delivery_address": self.delivery_address,
+            "total_amount": self.total_amount,
+            "status": self.status.value,
+            "rider_username": self.rider_username,
+            "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat()
+        }
+
+    @classmethod
+    def from_dict(cls, data):
+        items = [OrderItem.from_dict(item_data) for item_data in data["items"]]
+        order = cls(data["order_id"], data["customer_username"], items, data["delivery_address"])
+        order.total_amount = data["total_amount"]
+        order.status = OrderStatus(data["status"])
+        order.rider_username = data.get("rider_username")
+        order.created_at = datetime.fromisoformat(data["created_at"])
+        order.updated_at = datetime.fromisoformat(data["updated_at"])
+        return order
+
+    def __str__(self):
+        status_display = self.status.value.replace("_", " ").title()
+        rider_info = f" (Rider: {self.rider_username})" if self.rider_username else ""
+        return f"Order {self.order_id} - ${self.total_amount:.2f} - {status_display}{rider_info}"
