@@ -144,3 +144,77 @@ class Order:
         status_display = self.status.value.replace("_", " ").title()
         rider_info = f" (Rider: {self.rider_username})" if self.rider_username else ""
         return f"Order {self.order_id} - ${self.total_amount:.2f} - {status_display}{rider_info}"
+
+
+# Data manager for JSON persistence
+class DataManager:
+    def __init__(self, data_file: str = "quickcart_data.json"):
+        self.data_file = data_file
+        self.data = self._load_data()
+
+    def _load_data(self):
+        if os.path.exists(self.data_file):
+            try:
+                with open(self.data_file, 'r') as f:
+                    return json.load(f)
+            except (json.JSONDecodeError, FileNotFoundError):
+                pass
+        return {"users": {}, "products": {}, "orders": {}}
+
+    def save_data(self):
+        try:
+            with open(self.data_file, 'w') as f:
+                json.dump(self.data, f, indent=2)
+        except Exception as e:
+            print(f"Error saving data: {e}")
+
+    def add_user(self, user: User):
+        self.data["users"][user.username] = user.to_dict()
+        self.save_data()
+
+    def get_user(self, username: str) -> Optional[User]:
+        user_data = self.data["users"].get(username)
+        return User.from_dict(user_data) if user_data else None
+
+    def add_product(self, product: Product):
+        self.data["products"][product.product_id] = product.to_dict()
+        self.save_data()
+
+    def get_product(self, product_id: str) -> Optional[Product]:
+        product_data = self.data["products"].get(product_id)
+        return Product.from_dict(product_data) if product_data else None
+
+    def get_all_products(self) -> List[Product]:
+        return [Product.from_dict(data) for data in self.data["products"].values()]
+
+    def update_product_stock(self, product_id: str, new_stock: int):
+        if product_id in self.data["products"]:
+            self.data["products"][product_id]["stock"] = new_stock
+            self.save_data()
+
+    def add_order(self, order: Order):
+        self.data["orders"][order.order_id] = order.to_dict()
+        self.save_data()
+
+    def update_order(self, order: Order):
+        self.data["orders"][order.order_id] = order.to_dict()
+        self.save_data()
+
+    def get_order(self, order_id: str) -> Optional[Order]:
+        order_data = self.data["orders"].get(order_id)
+        return Order.from_dict(order_data) if order_data else None
+
+    def get_orders_by_customer(self, username: str) -> List[Order]:
+        return [Order.from_dict(data) for data in self.data["orders"].values() 
+                if data["customer_username"] == username]
+
+    def get_orders_by_rider(self, username: str) -> List[Order]:
+        return [Order.from_dict(data) for data in self.data["orders"].values() 
+                if data.get("rider_username") == username]
+
+    def get_pending_orders(self) -> List[Order]:
+        return [Order.from_dict(data) for data in self.data["orders"].values() 
+                if data["status"] == OrderStatus.PENDING.value]
+
+    def get_all_orders(self) -> List[Order]:
+        return [Order.from_dict(data) for data in self.data["orders"].values()]
