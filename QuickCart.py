@@ -6,17 +6,8 @@ from typing import Dict, List, Optional
 import uuid
 
 # Enums for better type safety and status management
-class UserRole(Enum):
-    ADMIN = "admin"
-    USER = "user"
-    RIDER = "rider"
 
-class OrderStatus(Enum):
-    PENDING = "pending"
-    ASSIGNED = "assigned"
-    IN_PROGRESS = "in_progress"
-    DELIVERED = "delivered"
-    CANCELLED = "cancelled"
+
 
 # Base User class with common attributes
 class User:
